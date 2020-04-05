@@ -1,3 +1,104 @@
+1. Training ELMO from Scratch on Custom Data-set for Generating Embeddings (Tensorflow) : https://appliedmachinelearning.blog/2019/11/30/training-elmo-from-scratch-on-custom-data-set-for-generating-embeddings-tensorflow/
+2. Deep Dive The ELMo Implementation : https://huntzhan.github.io/posts/nlp/elmo/
+
+# Parameters Values
+```
+batch_size = 128  # batch size for each GPU
+
+n_gpus = 1
+# number of tokens in training data
+n_train_tokens = 1410521
+
+options = {
+     'bidirectional': True,
+
+     'char_cnn': {'activation': 'relu',
+      'embedding': {'dim': 16},
+      'filters': [[1, 32],
+       [2, 32],
+       [3, 64],
+       [4, 128],
+       [5, 256],
+       [6, 512],
+       [7, 1024]],
+      'max_characters_per_token': 50,
+      'n_characters': 261,
+      'n_highway': 2},
+
+     'dropout': 0.1,
+
+     'lstm': {
+      'cell_clip': 3,
+      'dim': 1024,
+      'n_layers': 2,
+      'proj_clip': 3,
+      'projection_dim': 128,
+      'use_skip_connections': True},
+
+     'all_clip_norm_val': 10.0,
+
+     'n_epochs': 10,
+     'n_train_tokens': n_train_tokens,
+     'batch_size': batch_size,
+     'n_tokens_vocab': vocab.size,
+     'unroll_steps': 20,
+     'n_negative_samples_batch': 8192,
+    }
+
+batch_size = options['batch_size']	# 128
+unroll_steps = options['unroll_steps'] # 20 ##fixed size window of 20 tokens
+n_train_tokens = options.get('n_train_tokens', 768648884) # 1410521
+n_tokens_per_batch = batch_size * unroll_steps * n_gpus # 128 * 20 * 1 = 2560
+n_batches_per_epoch = int(n_train_tokens / n_tokens_per_batch) # 1410521 / 2560 = 550
+n_batches_total = options['n_epochs'] * n_batches_per_epoch = 10 * 543 = 5500
+```
+
+Commands
+
+Training :
+```
+python bin/train_elmo.py --train_prefix='swb/train/*' --vocab_file 'swb/vocab.txt' --save_dir 'swb/checkpoint'
+```
+
+print (batch_no, batch.keys(), n_batches_total) : 1 dict_keys(['token_ids', 'tokens_characters', 'next_token_id', 'token_ids_reverse', 'tokens_characters_reverse', 'next_token_id_reverse']) 5500 # there are 128 items in one batch. 128 represents the number sentences being processed in one batch.
+
+Testing : (Minimizing perplexity is the same as maximizing probability)
+
+```
+python bin/run_test.py --test_prefix='swb/dev/*' --vocab_file 'swb/vocab.txt' --save_dir='swb/checkpoint'
+```
+
+Generated weights :
+```
+python bin/dump_weights.py --save_dir 'swb/checkpoint' --outfile 'swb/swb_weights.hdf5'
+```
+
+Prediction : Copy and paste 'prediction.py' inside the bin, copy swb/model/{options.json, swb.weights.hdf5, vocab.txt} also in the bin dreictory
+
+run the following command :
+```
+cd bilm-tf/bin
+python prediction.py
+```
+out:
+```
+USING SKIP CONNECTIONS
+[['Technology', 'has', 'advanced', 'so', 'much', 'in', 'new', 'scientific', 'world'], ['My', 'child', 'participated', 'in', 'fancy', 'dress', 'competition'], ['Fashion', 'industry', 'has', 'seen', 'tremendous', 'growth', 'in', 'new', 'designs']]
+Shape of context ids =  (3, 11, 50)
+Shape of generated embeddings =  (3, 9, 1024)
+Euclidean Distance Comparison -
+
+Dress-Technology =  27.07
+Dress-Fashion =  22.39
+
+
+Cosine Distance Comparison -
+
+Dress-Technology =  0.81
+Dress-Fashion =  0.63
+
+```
+
 # bilm-tf
 Tensorflow implementation of the pretrained biLM used to compute ELMo
 representations from ["Deep contextualized word representations"](http://arxiv.org/abs/1802.05365).

@@ -6,4 +6,5 @@ build/
 *.pyc
 *.swp
 
-
+swb/*
+bin/swb/*

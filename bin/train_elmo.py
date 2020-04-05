@@ -13,10 +13,10 @@ def main(args):
 
     # define the options
     batch_size = 128  # batch size for each GPU
-    n_gpus = 3
+    n_gpus = 1
 
     # number of tokens in training data (this for 1B Word Benchmark)
-    n_train_tokens = 768648884
+    n_train_tokens = 1410521
 
     options = {
      'bidirectional': True,
@@ -38,7 +38,7 @@ def main(args):
     
      'lstm': {
       'cell_clip': 3,
-      'dim': 4096,
+      'dim': 1024,
       'n_layers': 2,
       'proj_clip': 3,
       'projection_dim': 512,
